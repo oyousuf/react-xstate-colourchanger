@@ -4,3 +4,8 @@ To run:
   npm install
   npm start
 #+end_src
+
+Request acccess from this link before running:
+#+begin_src sh
+  https://cors-anywhere.herokuapp.com/corsdemo
+#+end_src
