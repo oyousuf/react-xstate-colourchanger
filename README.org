@@ -5,6 +5,8 @@ To run:
   npm start
 #+end_src
 
+Easy name options include John, Jack, David, Robert, Jennifer, Jessica.
+
 Request acccess from this link before running:
 #+begin_src sh
   https://cors-anywhere.herokuapp.com/corsdemo
