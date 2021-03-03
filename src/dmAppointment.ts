@@ -1,4 +1,5 @@
-/*import { MachineConfig, send, Action, assign } from "xstate";
+import { MachineConfig, Machine, send, Action, assign } from "xstate";
+import "./styles.scss";
 
 
 function say(text: string): Action<SDSContext, SDSEvent> {
@@ -6,11 +7,27 @@ function say(text: string): Action<SDSContext, SDSEvent> {
 }
 
 function listen(): Action<SDSContext, SDSEvent> {
-    return send('LISTEN')
+    return send("LISTEN")
 }
 
-const grammar: { [index: string]: { person?: string, day?: string, time?: string } } = {
+const grammar: { [index: string]: { person?: string, day?: string, time?: string } 
+} = {
+    // Here are some common names in English that I found are easier for the robot to understand.
     "John": { person: "John Appleseed" },
+    "Jack": { person: "Jack Orangeseed" },
+    "David": { person: "David Grapeseed" },
+    "Robert": { person: "Robert Watermelonseed" },
+    "Jennifer": { person: "Jennifer Bananaseed" },
+    "Jessica": { person: "Jessica Pineappleseed" },
+
+    "john": { person: "john appleseed" },
+    "jack": { person: "jack orangeseed" },
+    "david": { person: "david grapeseed" },
+    "robert": { person: "robert watermelonseed" },
+    "jennifer": { person: "jennifer bananaseed" },
+    "jessica": { person: "jessica pineappleseed" },
+
+    // Here are names of friends I tried at first, but because they're non-English it was incredibly hard to move forward with the robot so I mad the previously mentioned English names above.
     "Zhe": { person: "Zhe Han" },
     "Siyi": { person: "Siyi Gu" },
     "Jae Eun": { person: "Jae Eun Hong" },
@@ -19,7 +36,6 @@ const grammar: { [index: string]: { person?: string, day?: string, time?: string
     "Flor": { person: "Flor Ortiz" },
     "Emma": { person: "Emma Wallerö"},
 
-    "john": { person: "john appleseed" },
     "zhe": { person: "zhe han" },
     "siyi": { person: "siyi gu" },
     "jae eun": { person: "jae eun hong" },
@@ -28,6 +44,7 @@ const grammar: { [index: string]: { person?: string, day?: string, time?: string
     "flor": { person: "flor ortiz" },
     "emma": { person: "emma wallerö" },
 
+    //Days of the week with alternating potential utterances ('on')
     "Monday": { day: "Monday" },
     "on Monday": { day: "Monday" },
     "Tuesday": { day: "Tuesday" },
@@ -43,7 +60,7 @@ const grammar: { [index: string]: { person?: string, day?: string, time?: string
     "Sunday": { day: "Sunday" },
     "on Sunday": { day: "Sunday" },
 
-
+    //times with different utterances and spellings/numberings to capture all ways the robot could interpret it
     "at one": { time: "01:00" },
     "at two": { time: "02:00" },
     "at three": { time: "03:00" },
@@ -145,8 +162,9 @@ const grammar: { [index: string]: { person?: string, day?: string, time?: string
     "24": { time: "00:00" }
 }
 
-const grammar2 = {
-    "yes": true,
+//second grammar for trues and falses
+const grammar2 : { [index: string]: boolean } = 
+    {"yes": true,
     "Yes": true,
     "yes of course": true,
     "Yes of course": true,
@@ -162,336 +180,17 @@ const grammar2 = {
     "No way": false
 }
 
-export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
-    initial: 'init',
-    states: 
-    {
-        init: 
-        {
-            on: 
-            {
-                CLICK: 'welcome'
-            }
-        },
 
-        welcome: 
-        {
-            initial: "prompt",
-            on: { ENDSPEECH: "who" },
-            states: 
-            {
-                prompt: { entry: say("Let's create an appointment") }
-            }
-        },
-
-        who: 
-        {
-            initial: "prompt",
-            on: 
-            {
-                RECOGNISED: [{
-                    cond: (context) => "person" in (grammar[context.recResult] || {}),
-                    actions: assign((context) => { return { person: grammar[context.recResult].person } }),
-                    target: "day"
-
-                },
-                { target: ".nomatch" }]
-            },
-            states: 
-            {
-                prompt: 
-                {
-                    entry: say("Who are you meeting with?"),
-                    on: { ENDSPEECH: "ask" }
-                },
-                ask: 
-                {
-                    entry: listen()
-                },
-                nomatch: 
-                {
-                    entry: say("Sorry I don't know them"),
-                    on: { ENDSPEECH: "prompt" }
-                }
-            }
-        },
-
-        day: 
-        {
-            initial: "prompt",
-            on: 
-            {
-	            RECOGNISED: [{
-	                cond: (context) => "day" in (grammar[context.recResult] || {}),
-		            actions: assign((context) => { return { day: grammar[context.recResult].day } }),
-		            target: "wholeday"
-
-		        },	
-		        { target: ".nomatch" }]
-	        },
-            states: 
-            {
-                prompt: 
-                {
-                    entry: send((context) => ({
-                        type: "SPEAK",
-                        value: `OK. ${context.person}. On which day is your meeting?`
-                    })),
-		            on: { ENDSPEECH: "ask" }
-                },
-                ask: 
-                {
-		            entry: listen()
-	            },
-                nomatch: 
-                {
-		            entry: say("Sorry I don't know which day are you talking about"),
-		            on: { ENDSPEECH: "prompt" }
-	            }	     
-            }
-        },
-
-        wholeday: 
-        {
-		    initial: "prompt",
-		    on: {
-	            RECOGNISED: [{
-			        cond: (context) => grammar2[context.recResult] === true,
-                    target: "notime"},
-					{
-					cond: (context) => grammar2[context.recResult] === false,
-					target: "whattime"
-
-		        },
-	            { target: ".nomatch" }]
-		    },
-            states: 
-            {
-                prompt: 
-                {
-			        entry: send((context) => ({
-			            type: "SPEAK",
-						value: `Good.on ${context.day}. Will it take the whole day?`
-			        })),
-			        on: { ENDSPEECH: "ask" }
-		        },
-                ask: 
-                {
-		            entry: listen()
-		        },
-                nomatch: 
-                {
-			        entry: say("Please repeat it again"),
-		            on: { ENDSPEECH: "prompt" }
-		        }
-		    }	     
-        },
-
-        notime: 
-        {
-		    initial: "prompt",
-            on: 
-            {
-                RECOGNISED: 
-                [
-                    { 
-			            cond: (context) => grammar2[context.recResult] === true,
-                        target: "Finished"
-                    },
-
-					{
-					cond: (context) => grammar2["context.recResult"] === false,
-                    target: "who"	   
-                    },
-                    
-                    { target: ".nomatch" }
-                ]
-
-		    },
-            states: 
-            {
-                prompt: 
-                {
-			        entry: send((context) => ({
-			            type: "SPEAK",
-						value: `Good. Do you want to me create an appointment with ${context.person} on ${context.day}for the whole day?`
-                    })),
-                    on: { ENDSPEECH: "ask" }
-                },
-                
-                ask: 
-                {
-			        entry: listen()
-                },
-                
-                nomatch: 
-                {
-			        entry: say("Please repeat it again"),
-			        on: { ENDSPEECH: "prompt" }
-		        }
-            }
-        },
-        
-        whattime: 
-        {
-			initial: "prompt",
-            on: 
-            {
-                RECOGNISED: 
-                [
-                    {
-					cond: (context) => "time" in (grammar[context.recResult] || {}),
-					actions: assign((context) => { return { time: grammar[context.recResult].time } }),
-					target: "withtime"
-                    },
-                            
-                    { target: ".nomatch" }
-                ]
-            },
-                    
-            states: 
-            {
-				prompt: { entry: say("What time is your meeting"),
-				on: { ENDSPEECH: "ask" }
-            },
-                    
-                    ask: 
-                    {
-						entry: listen()
-                    },
-                    
-                nomatch: 
-                {
-					entry: say("Please repeat it again"),
-					on: { ENDSPEECH: "prompt" }
-				}
-			}
-        },
-        
-        withtime: 
-        {
-			initial: "prompt",
-            on: 
-            {
-                RECOGNISED: 
-                [
-                    { 
-					cond: (context) => grammar2[context.recResult] === true,
-                    target: "Finished"
-                    },
-
-					{
-					cond: (context) => grammar2[context.recResult] === false,
-					target: "who"
-                    },
-                    
-                    { target: ".nomatch" }
-                ]
-             },
-             
-             states: 
-             {
-                 prompt: 
-                 {
-					 entry: send((context) => ({
-						 type: "SPEAK",
-						 value: `Good. Do you want to me create an appointment with ${context.person} on ${context.day} at ${context.time}?`
-					 })),
-					 on: { ENDSPEECH: "ask" }
-                 },
-                 
-                 ask: 
-                 {
-					 entry: listen()
-                 },
-                 
-                 nomatch: 
-                 {
-					 entry: say("Please repeat it again"),
-					 on: { ENDSPEECH: "prompt" }
-				 }
-			 }
-        },
-        
-        Finished: 
-        {
-		    initial: "prompt",
-		    on: { ENDSPEECH: "init" },
-            states: 
-            {
-                prompt: 
-                { 
-                    entry: say("Your appointment has been created!")
-		        },
-	        }
-	    }	    
-    }
-})*/
-
-import { MachineConfig, Machine, send, Action, assign } from "xstate";
-import "./styles.scss";
-import * as React from "react";
-import * as ReactDOM from "react-dom";
-import { useMachine, asEffect } from "@xstate/react";
-import { inspect } from "@xstate/inspect";
-
-
-function say(text: string): Action<SDSContext, SDSEvent> {
-    return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
-}
-
-function listen(): Action<SDSContext, SDSEvent> {
-    return send('LISTEN')
-}
-
-const grammar: { [index: string]: { person?: string, day?: string, time?: string } 
-} = {
-    "John": { person: "John Appleseed" },
-    "Mary": { person: "Mary Curie" },
-    "George": { person: "George Smith" },
-    "Axel": { person: "Axel Rose" },
-    "Sebastian": { person: "Sebastian Bach" },
-
-    "on Monday": { day: "Monday" },
-    "on Tuesday": { day: "Tuesday" },
-    "on Wednesday": { day: "Wednesday" },
-    "on Thursday": { day: "Thursday" },
-    "on Friday": { day: "Friday" },
-	"on Saturday": { day: "Saturday" },
-	"on Sunday": { day: "Sunday" },
-
-	"at 5": { time: "5:00" },
-	"at 6": { time: "6:00" },
-    "at 7": { time: "7:00" },
-    "at 8": { time: "8:00" },
-    "at 9": { time: "9:00" },
-    "at 10": { time: "10:00" },
-    "at 11": { time: "11:00" },
-    "at 12": { time: "12:00" }
-}
-
-const grammar2: { [index: string]: boolean } = {
-    "yes of course": true,
-    "sure": true,
-    "absolutely": true,
-    "yes": true,
-    "no way": false,
-    "no": false
-}
-
-let a = grammar2["yes"]
-let b = grammar2["no"]
-
-function promptAndAsk(prompt: string): MachineConfig<SDSContext, any, SDSEvent> {
+/*function promptAndAsk(prompt: string): MachineConfig<SDSContext, any, SDSEvent> {
     return ({
-        initial: 'prompt',
+        initial: "prompt",
         states: {
             prompt: {
                 entry: say(prompt),
-                on: { ENDSPEECH: 'ask' }
+                on: { ENDSPEECH: "ask" }
             },
             ask: {
-                entry: send('LISTEN')
+                entry: send("LISTEN")
             },
         }})
 }
@@ -499,11 +198,11 @@ function promptAndAsk(prompt: string): MachineConfig<SDSContext, any, SDSEvent> 
 
 export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
    
-    initial: 'init',
+    initial: "init",
     states: {
         init: {
             on: {
-                CLICK: 'welcome'
+                CLICK: "welcome"
             }            
         },        
 
@@ -520,22 +219,317 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 
         query: {
             invoke: {
-                id: 'rasa',
+                id: "rasa",
                 src: (context, event) => nluRequest(context.option),
                 onDone: {
-                    target: 'menu',
+                    target: "menu",
                     actions: [assign((context, event) => { return  {option: event.data.intent.name} }),
                     (context: SDSContext, event: any) => console.log(event.data)]
                     //actions: assign({ intent: (context: SDSContext, event: any) =>{ return event.data }})
 
                 },
                 onError: {
-                    target: 'welcome',
+                    target: "welcome",
                     actions: (context, event) => console.log(event.data)
                 }
             }
         },
 
+        menu: {
+            initial: "prompt",
+            on: {
+                ENDSPEECH: [
+                    { target: "todo", cond: (context) => context.option === "todo" },
+                    { target: "timer", cond: (context) => context.option === "timer" },
+                    { target: "appointment", cond: (context) => context.option === "appointment" }
+                ]
+            },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `OK. I understand.`
+                    })),
+        }, 
+            }       
+        },
+
+
+        todo: {
+            initial: "prompt",
+            on: { ENDSPEECH: "init" },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `Let"s create a to do item`
+                    }))
+                }}
+        },
+        
+        timer: {
+            initial: "prompt",
+            on: { ENDSPEECH: "init" },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `Let"s create a timer`
+                    }))
+                }}
+        },
+        
+        
+        appointment: {
+            initial: "prompt",
+            on: { ENDSPEECH: "who" },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `Let"s create an appointment`
+                    }))
+                }}
+        },
+        who: {
+            initial: "prompt",
+            on: {
+                RECOGNISED: [{
+					cond: (context) => "person" in (grammar[context.recResult] || {}),
+                    actions: assign((context) => { return { person: grammar[context.recResult].person } }),
+                    target: "day"
+
+                },
+                { target: ".nomatch" }]
+            },
+            states: {
+                prompt: {
+                    entry: say("Who are you meeting with?"),
+                    on: { ENDSPEECH: "ask" }
+                },
+                ask: {
+                    entry: listen()
+                },
+                nomatch: {
+                    entry: say("Sorry I do not know them"),
+                    on: { ENDSPEECH: "prompt" }
+                }
+            }
+        },
+        day: {
+            initial: "prompt",
+            on: {
+                RECOGNISED: [{
+                    cond: (context) => "day" in (grammar[context.recResult] || {}),
+                    actions: assign((context) => { return { day: grammar[context.recResult].day } }),
+                    target: "wholeday"
+                },
+                { target: ".nomatch" }]
+            },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `OK. ${context.person}. On which day is your meeting?`,
+                    })),
+                    on: { ENDSPEECH: "ask" }
+                },
+                ask: {
+                    entry: listen()
+                },
+                nomatch: {
+                    entry: say("Sorry I do not understand"),
+                    on: { ENDSPEECH: "prompt" }
+                }
+            }
+        },
+        wholeday: {
+            initial: "prompt",
+            on: {
+                RECOGNISED: [{cond: (context) => (grammar2[context.recResult] === false),
+                    target: "time"
+                },
+		{cond: (context) => (grammar2[context.recResult] === true),
+		target: "confirm_meeting_whole_day"
+		},
+                { target: ".nomatch" }]
+            },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `OK. ${context.person} on ${context.day}. Will it take the whole day?`
+                    })),
+		    on: { ENDSPEECH: "ask" }
+                },
+		ask: {
+		     entry: listen()
+            },
+	    nomatch: {
+	    	entry: say("Sorry I do not understand"),
+		on: { ENDSPEECH: "prompt" }
+	            }
+                }
+	},
+        time: {
+            initial: "prompt",
+            on: {
+                RECOGNISED: [{
+                    cond: (context) => "time" in (grammar[context.recResult] || {}),
+                    actions: assign((context) => { return { time: grammar[context.recResult].time } }),
+                    target: "confirm_time"
+
+                },
+                { target: ".nomatch" }]
+            },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `OK. ${context.day}. What time is your meeting?`,
+                    
+                    })),
+            on: { ENDSPEECH: "ask" }
+                },
+        ask: {
+            entry: listen()
+                },
+        nomatch: {
+            entry: say("Sorry I do not know that"),
+        on: { ENDSPEECH: "prompt" }
+                }
+                }
+        },
+        confirm_meeting_whole_day: {
+            initial: "prompt",
+            on: {
+                RECOGNISED: [{cond: (context) => (grammar2[context.recResult] === false),
+                    target: "init"
+                },
+		{cond: (context) => (grammar2[context.recResult] === true),
+		target: "confirmed"
+		},
+                { target: ".nomatch" }]
+            },
+
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `Do you want to create an appointment with ${context.person} on ${context.day} for the whole day?`
+                    })),
+		    on: { ENDSPEECH: "ask" }
+                },
+		ask: {
+		     entry: listen()
+            },
+	    nomatch: {
+	    	entry: say("Sorry I do not understand"),
+		on: { ENDSPEECH: "prompt" }
+	           }
+                }
+
+	},
+    confirm_time: {
+        initial: "prompt",
+        on:  {
+            RECOGNISED: [{cond: (context) => (grammar2[context.recResult] === false),
+                target: "who"
+            },
+    {cond: (context) => (grammar2[context.recResult] === true),
+    target: "confirmed"
+    },
+            { target: ".nomatch" }]
+        },
+        states: {
+            prompt: {
+               entry: send((context) => ({
+                    type: "SPEAK",
+                    value: `Do you want to create an appointment with ${context.person} on ${context.day} at ${context.time}?`
+                })),
+        on: { ENDSPEECH: "ask" }
+            },
+    ask: {
+         entry: listen()
+        },
+    nomatch: {
+        entry: say("Sorry I do not understand"),
+    on: { ENDSPEECH: "prompt" }
+           }
+            },
+        },
+    confirmed: {
+        initial: "prompt",
+        on: { ENDSPEECH: "init" },
+        states: {
+            prompt: {
+                entry: send((context) => ({
+                    type: "SPEAK",
+                    value: `Your appointment has been created!`
+                }))
+            },
+    }
+    }
+    }})
+*/
+
+function promptAsk(prompt: string): MachineConfig<SDSContext, any, SDSEvent> {
+    return ({
+        initial: 'prompt',
+        states: {
+            prompt: {
+                entry: say(prompt),
+                on: { ENDSPEECH: 'ask' }
+            },
+            ask: {
+                entry: send('LISTEN')
+            },
+        }})
+}
+
+
+export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = 
+
+({
+    initial: 'init',
+    states: 
+    
+    {
+        init:{
+            on: {
+                CLICK: 'welcome'
+                }
+             },
+
+        welcome: 
+        {
+            on: {
+                RECOGNISED: {
+                    target: "query",
+                    actions: assign((context) => { return { option: context.recResult } }),
+                }    
+            },
+                    ...promptAsk("What would you like to do?")
+        },
+
+        query: 
+        {
+            invoke: {
+            
+            id: 'rasa',
+            src: (context, event) => nluRequest(context.option),
+            onDone: {
+                target: 'menu',
+                actions: [assign((context, event) => { return  {option: event.data.intent.name} }),
+                (context: SDSContext, event: any) => console.log(event.data)]
+            },
+            onError: {
+                target: 'welcome',
+                actions: (context, event) => console.log(event.data)
+
+                }
+            }
+        },
         menu: {
             initial: "prompt",
             on: {
@@ -549,13 +543,13 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
                 prompt: {
                     entry: send((context) => ({
                         type: "SPEAK",
-                        value: `OK. I understand.`
+                        value: `OK. I see.`
                     })),
         },
-     /*            nomatch: {
+                 nomatch: {
                     entry: say("Sorry, I don't understand"),
                     on: { ENDSPEECH: "prompt" }
-        } */ 
+        } 
             }       
         },
 
@@ -596,198 +590,319 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
                     }))
                 }}
         },
-        who: {
+
+        who: 
+        
+        {
             initial: "prompt",
-            on: {
-                RECOGNISED: [{
-					cond: (context) => "person" in (grammar[context.recResult] || {}),
+            on: 
+            {
+                RECOGNISED: 
+                [
+                    {
+                    cond: (context) => "person" in (grammar[context.recResult] || {}),
                     actions: assign((context) => { return { person: grammar[context.recResult].person } }),
                     target: "day"
-
-                },
-                { target: ".nomatch" }]
+                    },
+                { target: ".nomatch" }
+                ]
             },
-            states: {
-                prompt: {
+
+            states: 
+            
+            {
+                prompt: 
+                
+                {
                     entry: say("Who are you meeting with?"),
                     on: { ENDSPEECH: "ask" }
                 },
-                ask: {
+                
+                ask: 
+                
+                {
                     entry: listen()
                 },
-                nomatch: {
+                
+                nomatch: 
+                
+                {
                     entry: say("Sorry I don't know them"),
                     on: { ENDSPEECH: "prompt" }
                 }
             }
         },
-        day: {
+
+        day: 
+        
+        {
             initial: "prompt",
-            on: {
-                RECOGNISED: [{
-                    cond: (context) => "day" in (grammar[context.recResult] || {}),
-                    actions: assign((context) => { return { day: grammar[context.recResult].day } }),
-                    target: "wholeday"
-                },
-                { target: ".nomatch" }]
-            },
-            states: {
-                prompt: {
+            on: 
+            
+            {
+	            RECOGNISED: 
+                [
+                    {
+	                cond: (context) => "day" in (grammar[context.recResult] || {}),
+		            actions: assign((context) => { return { day: grammar[context.recResult].day } }),
+		            target: "wholeday"
+
+		            },	
+
+		            { target: ".nomatch" }
+                
+                ]
+	        },
+
+            states: 
+
+            {
+                prompt: 
+                
+                {
                     entry: send((context) => ({
                         type: "SPEAK",
-                        value: `OK. ${context.person}. On which day is your meeting?`,
+                        value: `OK. ${context.person}. On which day is your meeting?`
                     })),
-                    on: { ENDSPEECH: "ask" }
+		            on: { ENDSPEECH: "ask" }
                 },
-                ask: {
-                    entry: listen()
-                },
-                nomatch: {
-                    entry: say("Sorry I didn't understand"),
-                    on: { ENDSPEECH: "prompt" }
-                }
+		        ask: 
+                
+                {
+		            entry: listen()
+	            },
+
+		        nomatch: 
+                
+                {
+		            entry: say("Sorry I don't know which day are you talking about"),
+		            on: { ENDSPEECH: "prompt" }
+	            }	     
             }
         },
-        wholeday: {
-            initial: "prompt",
-            on: {
-                RECOGNISED: [{cond: (context) => (grammar2[context.recResult] === b),
-                    target: "time"
-                },
-		{cond: (context) => (grammar2[context.recResult] === a),
-		target: "confirm_meeting_whole_day"
-		},
-                { target: ".nomatch" }]
-            },
-            states: {
-                prompt: {
-                    entry: send((context) => ({
-                        type: "SPEAK",
-                        value: `OK. ${context.person} on ${context.day}. Will it take the whole day?`
-                    })),
-		    on: { ENDSPEECH: "ask" }
-                },
-		ask: {
-		     entry: listen()
-            },
-	    nomatch: {
-	    	entry: say("Sorry, I don't understand"),
-		on: { ENDSPEECH: "prompt" }
-	            }
-                }
-	},
-        time: {
-            initial: "prompt",
-            on: {
-                RECOGNISED: [{
-                    cond: (context) => "time" in (grammar[context.recResult] || {}),
-                    actions: assign((context) => { return { time: grammar[context.recResult].time } }),
-                    target: "confirm_time"
 
-                },
-                { target: ".nomatch" }]
-            },
-            states: {
-                prompt: {
-                    entry: send((context) => ({
-                        type: "SPEAK",
-                        value: `OK. ${context.day}. What time is your meeting?`,
+
+	    wholeday: 
+        
+        {
+		        initial: "prompt",
+		        on: 
+                
+                {
+	                RECOGNISED: 
                     
-                    })),
-            on: { ENDSPEECH: "ask" }
+                    [
+                        {cond: (context) => grammar2[context.recResult] === true,
+                        target: "timefixed"},
+
+						{cond: (context) => grammar2[context.recResult] === false,
+						target: "settime"},
+
+	                { target: ".nomatch" }
+                    ]
+		        
                 },
-        ask: {
-            entry: listen()
-                },
-        nomatch: {
-            entry: say("Sorry I don't know that"),
-        on: { ENDSPEECH: "prompt" }
-                }
-                }
+
+
+		        states: 
+                
+                {
+		            prompt: 
+                    
+                    {
+			            entry: send((context) => ({
+			                type: "SPEAK",
+						    value: `Good. Appointment is on ${context.day}. Will it take the whole day?`
+			            })),
+			            on: { ENDSPEECH: "ask" }
+		            },
+
+		            ask: {
+		                entry: listen()
+		            },
+
+		            nomatch: 
+
+                    {
+			            entry: say("Please repeat it again"),
+		                on: { ENDSPEECH: "prompt" }
+		            }
+		        }	     
         },
-        confirm_meeting_whole_day: {
-            initial: "prompt",
-            on: {
-                RECOGNISED: [{cond: (context) => (grammar2[context.recResult] === b),
-                    target: "init"
-                },
-		{cond: (context) => (grammar2[context.recResult] === a),
-		target: "confirmed"
+
+
+            timefixed: 
+            
+            {
+		           initial: "prompt",
+
+	               on: 
+                   
+                   {
+		               RECOGNISED: 
+                       
+                       [
+                           {cond: (context) => grammar2[context.recResult] === true,
+			               target: "Finished"},
+						   {cond: (context) => grammar2[context.recResult] === false,
+                           target: "who"},
+		                   { target: ".nomatch" }
+                        ]
+		            },
+
+
+
+		            states: 
+                    
+                    {
+		                prompt: 
+                        
+                        {
+			                entry: send((context) => ({
+			                    type: "SPEAK",
+								value: `Good. Do you want to me create an appointment with ${context.person} on ${context.day}for the whole day?`
+                            })),
+                            on: { ENDSPEECH: "ask" }
+		                },
+
+
+		                ask: 
+                        
+                        {
+			                entry: listen()
+		                },
+
+		                nomatch: 
+                        
+                        {
+			                entry: say("Please repeat it again"),
+			                on: { ENDSPEECH: "prompt" }
+		                }
+                    }
+	        },
+
+			settime: 
+                
+                    {
+
+					    initial: "prompt",
+					    on: 
+                    
+                    {
+						RECOGNISED: 
+                        [
+                            {
+							
+                            cond: (context) => "time" in (grammar[context.recResult] || {}),
+							actions: assign((context) => { return { time: grammar[context.recResult].time }}),
+							target: "withtime"
+
+						    },
+
+						    { target: ".nomatch" }
+                        ]
+					},
+
+
+					    states: 
+
+                        {
+						    prompt: { entry: say("What time is your meeting"),
+						    on: { ENDSPEECH: "ask" }
+					    },
+
+					ask: 
+                    {
+						entry: listen()
+				    },
+
+				nomatch:
+                
+                {
+					entry: say("Please repeat it again"),
+					on: { ENDSPEECH: "prompt" }
+				}
+			            }
+		                
+                    },
+
+
+		withtime: 
+        
+        {
+			initial: "prompt",
+			on: 
+            
+            {
+				RECOGNISED: 
+                [
+                    
+                    { 
+					cond: (context) => grammar2[context.recResult] === true,
+					target: "Finished"
+                    },
+					{
+					cond: (context) => grammar2[context.recResult] === false,
+					target: "who"
+				    },
+				    { target: ".nomatch" }
+                ]
+			},
+
+
+			 states: 
+             
+            {
+				 prompt: 
+                 
+                 {
+					 entry: send((context) => ({
+						 type: "SPEAK",
+						 value: `Good. Do you want to me create an appointment with ${context.person} on ${context.day} at ${context.time}?`
+					 })),
+					 on: { ENDSPEECH: "ask" }
+				 },
+
+				 ask: 
+                {
+					 entry: listen()
+				},
+
+				 nomatch: 
+                 
+                 {
+					 entry: say("Please repeat it again"),
+					 on: { ENDSPEECH: "prompt" }
+				 }
+			}
 		},
-                { target: ".nomatch" }]
-            },
 
-            states: {
-                prompt: {
-                    entry: send((context) => ({
-                        type: "SPEAK",
-                        value: `Do you want to create an appointment with ${context.person} on ${context.day} for the whole day?`
-                    })),
-		    on: { ENDSPEECH: "ask" }
-                },
-		ask: {
-		     entry: listen()
-            },
-	    nomatch: {
-	    	entry: say("Sorry, I don't understand"),
-		on: { ENDSPEECH: "prompt" }
-	           }
-                }
-
-	},
-    confirm_time: {
-        initial: "prompt",
-        on:  {
-            RECOGNISED: [{cond: (context) => (grammar2[context.recResult] === b),
-                target: "who"
-            },
-    {cond: (context) => (grammar2[context.recResult] === a),
-    target: "confirmed"
-    },
-            { target: ".nomatch" }]
-        },
-        states: {
-            prompt: {
-               entry: send((context) => ({
-                    type: "SPEAK",
-                    value: `Do you want to create an appointment with ${context.person} on ${context.day} at ${context.time}?`
-                })),
-        on: { ENDSPEECH: "ask" }
-            },
-    ask: {
-         entry: listen()
-        },
-    nomatch: {
-        entry: say("Sorry, I don't understand"),
-    on: { ENDSPEECH: "prompt" }
-           }
-            },
-        },
-    confirmed: {
-        initial: "prompt",
-        on: { ENDSPEECH: "init" },
-        states: {
-            prompt: {
-                entry: send((context) => ({
-                    type: "SPEAK",
-                    value: `Your appointment has been created!`
-                }))
-            },
+                Finished: 
+                
+                {
+		                 initial: "prompt",
+		                 on: { ENDSPEECH: "init" },
+		                 states: 
+                        {
+			                 prompt: { entry: say("Your appointment has been created!")},
+	                    }
+	            }	    
     }
-    }
-    }})
+
+})
 
 
 
 
-/* RASA API
- *  */
-const proxyurl = "https://cors-anywhere.herokuapp.com/";
-const rasaurl = 'https://irenetsk.herokuapp.com/model/parse'
+
+
+//the api for rasa to use
+const proxyurl = "https://cors-anywhere.herokuapp.com/"; // have to set up temporary permission/access for the robot to not give error: "Unexpected token S in JSON at position 0"
+const rasaurl = "https://intents-oyousuf.herokuapp.com/model/parse"
 const nluRequest = (text: string) =>
     fetch(new Request(proxyurl + rasaurl, {
-        method: 'POST',
-        headers: { 'Origin': 'http://localhost:3000/react-xstate-colourchanger' }, // only required with proxy
+        method: "POST",
+        headers: { "Origin": "http://localhost:3000/react-xstate-colourchanger" },
         body: `{"text": "${text}"}`
     }))
         .then(data => data.json());
