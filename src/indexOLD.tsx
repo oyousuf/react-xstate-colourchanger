@@ -35,7 +35,6 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                     }
                 },
                 recognising: {
-                    initial: 'progress',
                     entry: 'recStart',
                     exit: 'recStop',
                     on: {
@@ -47,8 +46,6 @@ const machine = Machine<SDSContext, any, SDSEvent>({
                         RECOGNISED: 'idle'
                     },
                     states: {
-                        progress: {
-                        },
                         match: {
                             entry: send('RECOGNISED'),
                         },
@@ -167,7 +164,7 @@ function App() {
 /* RASA API
  *  */
 const proxyurl = "https://cors-anywhere.herokuapp.com/";
-const rasaurl = 'https://rasa-nlu-api-00.herokuapp.com/model/parse'
+const rasaurl = 'https://intents-oyousuf.herokuapp.com/model/parse'
 const nluRequest = (text: string) =>
     fetch(new Request(proxyurl + rasaurl, {
         method: 'POST',
