@@ -6,7 +6,7 @@ To run:
 #+end_src
 
 Easy name options include: 'John', 'Jack', 'David', 'Robert', 'Jennifer', and 'Jessica'.
-I have a very Ethnic™ name and was hard for the demo to pick up lol.
+I have a very Ethnic™ name and it was hard for the demo to pick up lol.
 
 Request acccess from this link before running:
 #+begin_src sh
