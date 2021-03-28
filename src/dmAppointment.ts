@@ -5,7 +5,7 @@ import * as ReactDOM from "react-dom";
 import { useMachine, asEffect } from "@xstate/react";
 import { inspect } from "@xstate/inspect";
 
-const {cancel}=actions
+const {cancel} = actions
 
 function say(text: string): Action<SDSContext, SDSEvent> {
     return send((_context: SDSContext) => ({ type: "SPEAK", value: text }))
@@ -15,26 +15,7 @@ function listen(): Action<SDSContext, SDSEvent> {
     return send('LISTEN')
 }
 
-function promptAndAsk(prompt: string, speechprompt:string): MachineConfig<SDSContext, any, SDSEvent> {
-    return ({
-        initial: "prompt",
-        states: {
-            prompt: {
-                entry: say(prompt),
-                on: { ENDSPEECH: "ask" }
-            },
-            hist: {type: "history"},
-            maxspeech: {
-                ...speech(speechprompt)
-            },
-            ask: {
-                entry: [listen(), send('MAXSPEECH', {delay: 5000})]
-            },
-        }})
-}
-
-
-function helpm(prompt: string, name: string): MachineConfig<SDSContext, any, SDSEvent>{
+function help(prompt: string, name: string): MachineConfig<SDSContext, any, SDSEvent>{
     return ({entry: say(prompt),
              on: {ENDSPEECH: name+".hist" }})
 }
@@ -45,176 +26,149 @@ function speech(prompt: string): MachineConfig<SDSContext, any, SDSEvent>{
             }})
 }
 
-const grammar: { [index: string]: { person?: string, day?: string, time?: string } } = {
-    // Here are some common names in English that I found are easier for the robot to understand.
-    "John": { person: "John Appleseed" },
-    "Jack": { person: "Jack Orangeseed" },
-    "David": { person: "David Grapeseed" },
-    "Robert": { person: "Robert Watermelonseed" },
-    "Jennifer": { person: "Jennifer Bananaseed" },
-    "Jessica": { person: "Jessica Pineappleseed" },
-
-    "john": { person: "john appleseed" },
-    "jack": { person: "jack orangeseed" },
-    "david": { person: "david grapeseed" },
-    "robert": { person: "robert watermelonseed" },
-    "jennifer": { person: "jennifer bananaseed" },
-    "jessica": { person: "jessica pineappleseed" },
-
-    // Here are names of friends I tried at first, but because they're non-English it was incredibly hard to move forward with the robot so I mad the previously mentioned English names above.
-    "Zhe": { person: "Zhe Han" },
-    "Siyi": { person: "Siyi Gu" },
-    "Jae Eun": { person: "Jae Eun Hong" },
-    "Oreen": { person: "Oreen Yousuf" },
-    "Angeliki": { person: "Angeliki Zagoura" },
-    "Flor": { person: "Flor Ortiz" },
-    "Emma": { person: "Emma Wallerö"},
-
-    "zhe": { person: "zhe han" },
-    "siyi": { person: "siyi gu" },
-    "jae eun": { person: "jae eun hong" },
-    "oreen": { person: "oreen yousuf" },
-    "angeliki": { person: "angeliki zagoura" },
-    "flor": { person: "flor ortiz" },
-    "emma": { person: "emma wallerö" },
-
-    //Days of the week with alternating potential utterances ('on')
-    "Monday": { day: "Monday" },
-    "on Monday": { day: "Monday" },
-    "Tuesday": { day: "Tuesday" },
-    "on Tuesday": { day: "Tuesday" },
-    "Wednesday": { day: "Wednesday" },
-    "on Wednesday": { day: "Wednesday" },
-    "Thursday": { day: "Thursday" },
-    "on Thursday": { day: "Thursday" },
-    "Friday": { day: "Friday" },
-    "on Friday": { day: "Friday" },
-    "Saturday": { day: "Saturday" },
-    "on Saturday": { day: "Saturday" },
-    "Sunday": { day: "Sunday" },
-    "on Sunday": { day: "Sunday" },
-
-    //times with different utterances and spellings/numberings to capture all ways the robot could interpret it
-    "at one": { time: "01:00" },
-    "at two": { time: "02:00" },
-    "at three": { time: "03:00" },
-    "at four": { time: "04:00" },
-    "at five": { time: "05:00" },
-    "at six": { time: "06:00" },
-    "at seven": { time: "07:00" },
-    "at eight": { time: "08:00" },
-    "at nine": { time: "09:00" },
-    "at ten": { time: "10:00" },
-    "at eleven": { time: "11:00" },
-    "at twelve": { time: "12:00" },
-    "at thirteen": { time: "13:00" },
-    "at fourteen": { time: "14:00" },
-    "at fifteen": { time: "15:00" },
-    "at sixteen": { time: "16:00" },
-    "at seventeen": { time: "17:00" },
-    "at eighteen": { time: "18:00" },
-    "at nineteen": { time: "19:00" },
-    "at twenty": { time: "20:00" },
-    "at twenty one": { time: "21:00" },
-    "at twenty two": { time: "22:00" },
-    "at twenty three": { time: "23:00" },
-    "at twenty four": { time: "00:00" },
-
-    "one": { time: "01:00" },
-    "two": { time: "02:00" },
-    "three": { time: "03:00" },
-    "four": { time: "04:00" },
-    "five": { time: "05:00" },
-    "six": { time: "06:00" },
-    "seven": { time: "07:00" },
-    "eight": { time: "08:00" },
-    "nine": { time: "09:00" },
-    "ten": { time: "10:00" },
-    "eleven": { time: "11:00" },
-    "twelve": { time: "12:00" },
-    "thirteen": { time: "13:00" },
-    "fourteen": { time: "14:00" },
-    "fifteen": { time: "15:00" },
-    "sixteen": { time: "16:00" },
-    "seventeen": { time: "17:00" },
-    "eighteen": { time: "18:00" },
-    "nineteen": { time: "19:00" },
-    "twenty": { time: "20:00" },
-    "twenty one": { time: "21:00" },
-    "twenty two": { time: "22:00" },
-    "twenty three": { time: "23:00" },
-    "twenty four": { time: "00:00" },
-
-    "at 1": { time: "01:00" },
-    "at 2": { time: "02:00" },
-    "at 3": { time: "03:00" },
-    "at 4": { time: "04:00" },
-    "at 5": { time: "05:00" },
-    "at 6": { time: "06:00" },
-    "at 7": { time: "07:00" },
-    "at 8": { time: "08:00" },
-    "at 9": { time: "09:00" },
-    "at 10": { time: "10:00" },
-    "at 11": { time: "11:00" },
-    "at 12": { time: "12:00" },
-    "at 13": { time: "13:00" },
-    "at 14": { time: "14:00" },
-    "at 15": { time: "15:00" },
-    "at 16": { time: "16:00" },
-    "at 17": { time: "17:00" },
-    "at 18": { time: "18:00" },
-    "at 19": { time: "19:00" },
-    "at 20": { time: "20:00" },
-    "at 21": { time: "21:00" },
-    "at 22": { time: "22:00" },
-    "at 23": { time: "23:00" },
-    "at 24": { time: "00:00" },
-
-    "1": { time: "01:00" },
-    "2": { time: "02:00" },
-    "3": { time: "03:00" },
-    "4": { time: "04:00" },
-    "5": { time: "05:00" },
-    "6": { time: "06:00" },
-    "7": { time: "07:00" },
-    "8": { time: "08:00" },
-    "9": { time: "09:00" },
-    "10": { time: "10:00" },
-    "11": { time: "11:00" },
-    "12": { time: "12:00" },
-    "13": { time: "13:00" },
-    "14": { time: "14:00" },
-    "15": { time: "15:00" },
-    "16": { time: "16:00" },
-    "17": { time: "17:00" },
-    "18": { time: "18:00" },
-    "19": { time: "19:00" },
-    "20": { time: "20:00" },
-    "21": { time: "21:00" },
-    "22": { time: "22:00" },
-    "23": { time: "23:00" },
-    "24": { time: "00:00" }
+function promptAndAsk(prompt: string, prompt_a:string): MachineConfig<SDSContext, any, SDSEvent> {
+    return ({
+        initial: "prompt",
+        states: {
+            prompt: {
+                entry: say(prompt),
+                on: { ENDSPEECH: "ask" }
+            },
+            hist : {type: "history"},
+            maxspeech: {
+                ...speech(prompt_a)
+            },
+            ask: {
+                entry: [listen(), send('MAXSPEECH', {delay: 6000})]
+            },
+        }})
 }
 
-//second grammar for trues and falses
-const grammar2= { "yes": true,
-"Yes": true,
-"yes of course": true,
-"Yes of course": true,
-"sure": true,
-"Sure": true,
-"absolutely": true,
-"Absolutely": true,
-"perfect": true,
-"Perfect": true,
-"no": false,
-"No": false,
-"no way": false,
-"No way": false
+
+const grammar: { [index: string]: { pokemon?: string, place?: string, level?: string } } = {
+
+    //name of example pokemon 
+    "Pikachu": { pokemon: "Pikachu" },
+    "Bulbasaur": { pokemon: "Bulbasaur" },
+    "Charmander": { pokemon: "Charmander" },
+    "Squirtle": { pokemon: "Squirtle" },
+    "Mew": { pokemon: "Mew" },
+    "Mewtwo": { pokemon: "Mewtwo" },
+    "Seel": { pokemon: "Seel" },
+    "Dewgong": { pokemon: "Dewgong" },
+    "Jynx": { pokemon: "Jynx" },
+    "Eevee": { pokemon: "Eevee" },
+    "Snorlax": { pokemon: "Snorlax" },
+    "Slowking": { pokemon: "Slowking" },
+    "Butterfree": { pokemon: "Butterfree" },
+    "Ninetails": { pokemon: "Ninetails" },
+    "Psyduck": { pokemon: "Psyduck" },
+    "Kadabra": { pokemon: "Kadabra" },
+    "Golem": { pokemon: "Golem" },
+    "Seaking": { pokemon: "Seaking" },
+    "Mister Mime": { pokemon: "Mister Mime" },
+
+
+
+
+
+
+
+
+    //region or real life country 
+    "Göteborg" : { place: "Göteborg, Sweden" },
+    "Stockholm" : { place: "Stockholm, Sweden" },
+    "Ilsan" : { place: "Ilsan, South Korea" },
+    "Allen" : { place: "Allen, United States" },
+    "Cairo" : { place: "Cairo, Egypt" },
+    "Seoul" : { place: "Seoul, South Korea" },
+    "Addis Ababa" : { place: "Addis Ababa, Ethiopia" },
+    "Patras" : { place: "Patras, Greece" },
+    "Suzhou" : { place: "Suzhou, China" },
+    "Lima" : { place: "Lima, Peru" },
+    "Mexico City" : { place: "Mexico City, Mexico" },
+    "Bangkok" : { place: "Bangkok, Thailand" },
+    "Bucharest" : { place: "Bucharest, Romania" },
+    "Dhaka" : { place: "Dhaka, Bangladesh" },
+    "Kabul" : { place: "Kabul, Afghanistan" },
+    "Kingston" : { place: "Kingston, Jamaica" },
+
+    //in-game region names from pokemon franchise
+    "Kanto" : { place: "Kanto Region" },
+    "Johto" : { place: "Johto Region" },
+    "Hoenn" : { place: "Hoenn Region" },
+    "Sinnoh" : { place: "Sinnoh Region" },
+    "Unova": { place: "Unova Region" },
+    "Kalos": { place: "Kalos Region" },
+    "Alola" : { place: "Alola Region"},
+    "Galar" : { place: "Galar Region"},
+
+    //routes in region
+    // Route 20
+    // Route 8 
+    // Route 7 
+    // Route 13 
+    // Route 213 
+    // Route 4
+    // Route 113
+    // Route 36 
+     
+     
+    
+
+	//time 
+	"one" : { level: "1" },
+    "two" : { level: "2" },
+    "three" : { level: "3"},
+    "four": { level: "4" },
+    "five": { level: "5" },
+    "six": { level: "6" },
+    "seven": { level: "7" },
+    "eight": { level: "8" },
+    "nine": { level: "9" },
+    "ten": { level: "10" },
+    "eleven": { level: "11" },
+    "twelve": { level: "12" },
+    "thirteen": { level: "13" },
+    "fourteen": { level: "14" },
+    "fifteen": { level: "15" },
+    "sixteen": { level: "16" },
+    "seventeen": { level: "17" },
+    "eighteen": { level: "18" },
+    "nineteen": { level: "19" },
+    "twenty": { level: "20" },
+    "twenty one": { level: "21" },
+    "twenty two": { level: "22" },
+    "twenty three": { level: "23" },
+    "twenty four": { level: "24" }
 }
-const commands = {"help": "h", "Help": "H"}
+
+
+const grammar2 : { [index: string]: boolean }= { 
+
+                  "yes": true,
+                  "Yes": true,
+				  "Of course": true,
+                  "of course": true, 
+                  "okay": true,
+                  "Okay": true,
+                  "Yup": true,
+                  "yup": true,
+                  "Ja": true,
+                  "ja": true,
+                  "No": false,
+				  "no" : false,
+                  "Nej": false,
+                  "nej": false,
+				  "No way": false,
+				  "no way" : false
+}
 
 const grammar3 ={"count": 0}
+
+const help_commands = {"help": "Help", "Help": "Help"}
+
+
 
 export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
     initial: 'init',
@@ -229,37 +183,47 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
             on: {
                 RECOGNISED: [{
                     target: "query",
-                    cond: (context) => !(context.recResult in commands),
-                    actions: [assign((context) => { return { option: context.recResult } }),assign((context) => { grammar3["count"]=0})],
-                    
+                    cond: (context) => !(context.recResult in help_commands),
+                    actions: [assign((context) => { return { option: context.recResult } }),assign((context) => { grammar3["count"]=0}),cancel("maxsp")],
                 },
-                {target: "help1",
-                cond: (context) => context.recResult in commands }],
-                MAXSPEECH: [{target:"welcome.maxspeech",
-                cond: (context) => grammar3["count"] <= 2,
-                actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
-                },{target: "#root.dm.init", 
-                cond: (context) => grammar3["count"] > 2, 
-                actions:assign((context) => { grammar3["count"]=0})}]
+
+                {target: "welcome_help",
+                cond: (context) => context.recResult in help_commands}], 
+                
+
+                MAXSPEECH: [{
+                    target:".maxspeech",
+                    cond: (context) => grammar3["count"] <= 2,
+                    actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
+                    },
+                    {target: "#root.dm.init", 
+                    cond: (context) => grammar3["count"] > 2, 
+                    actions:assign((context) => { grammar3["count"]=0})}]
             },
+
             states: {        
                 prompt: {
-                entry: say("What would you like to do?"),
+                entry: say("Pokedex online. Select feature."),
                 on: { ENDSPEECH: "ask" }
             },
+
             hist: {type: "history"},
-               maxspeech: {
-                ...speech("You have not responded. What is it you would like to do?")
+
+            maxspeech: {
+                ...speech("Please respond. What Pokemon have you come across?")
         },  
+
             ask: {
-                entry: [listen(), send('MAXSPEECH', {delay: 5000})]
+                entry: [listen(), send('MAXSPEECH', {delay: 6000})]
             }
         }   
     }, 
     
-        help1:{
-            ...helpm("Please, tell me what you want to do.","welcome")
+        welcome_help:{
+            ...help("This is the Pokedex, a repository of information. Please tell me which Pokemon you encountered.", "welcome")
+            
         },
+
 		query: {
             invoke: {
                 id: "rasa",
@@ -267,12 +231,13 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
                 onDone: {
                     target: "menu",
                     actions: [assign((context, event) => { return  {option: event.data.intent.name} }),
-                    (context: SDSContext, event: any) => console.log(event.data)]
-                    
+                    (context: SDSContext, event: any) => console.log(event.data), cancel("maxsp")]
+                    //actions: assign({ intent: (context: SDSContext, event: any) =>{ return event.data }})
+
                 },
                 onError: {
                     target: "welcome",
-                    actions: (context, event) => console.log(event.data)
+                    actions: [(context, event) => console.log(event.data), cancel("maxsp")]
                 }
             }
         },
@@ -281,275 +246,311 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
             initial: "prompt",
             on: {
                 ENDSPEECH: [
-                    { target: "todo", cond: (context) => context.option === "todo" },
-                    { target: "timer", cond: (context) => context.option === "timer" },
-                    { target: "appointment", cond: (context) => context.option === "appointment" }
+                    //{ target: "todo", cond: (context) => context.option === "todo" },
+                    //{ target: "timer", cond: (context) => context.option === "timer" },
+                    { target: "pokedex", cond: (context) => context.option === "pokedex" }
                 ]
             },
+
             states: {
                 prompt: {
                     entry: send((context) => ({
                         type: "SPEAK",
-                        value: `OK. I understand，you want a ${context.option}.`
+                        value: `OK. You chose ${context.option}.`
                     })),
-        }, 
+        },
+
+                 nomatch: {
+                    entry: say("Sorry, please repeat again."),
+                    on: { ENDSPEECH: "prompt" }
+        } 
             }       
         },
 
+        // todo: {
+        //     initial: "prompt",
+        //     on: { ENDSPEECH: "init" },
+        //     states: {
+        //         prompt: {
+        //             entry: send((context) => ({
+        //                 type: "SPEAK",
+        //                 value: `Let"s create a to do item!`
+        //             }))
+        //         }}
+        // },
+        
+        // timer: {
+        //     initial: "prompt",
+        //     on: { ENDSPEECH: "init" },
+        //     states: {
+        //         prompt: {
+        //             entry: send((context) => ({
+        //                 type: "SPEAK",
+        //                 value: `Let"s create a timer!`
+        //             }))
+        //         }}
+        // },
+        
+        
+         pokedex: {
+            initial: "prompt",
+            on: { ENDSPEECH: "pokemon" },
+            states: {
+                prompt: {
+                    entry: send((context) => ({
+                        type: "SPEAK",
+                        value: `Let us make a Pokemon entry into the national Pokedex!`
+                    }))
+                }}
+        },
 
-        todo: {
-            initial: "prompt",
-            on: { ENDSPEECH: "init" },
-            states: {
-                prompt: {
-                    entry: send((context) => ({
-                        type: "SPEAK",
-                        value: `Let's create a to do item`
-                    }))
-                }}
-        },
-        
-        timer: {
-            initial: "prompt",
-            on: { ENDSPEECH: "init" },
-            states: {
-                prompt: {
-                    entry: send((context) => ({
-                        type: "SPEAK",
-                        value: `Let's create a timer`
-                    }))
-                }}
-        },
-        
-        
-        appointment: {
-            initial: "prompt",
-            on: { ENDSPEECH: "who" },
-            states: {
-                prompt: {
-                    entry: send((context) => ({
-                        type: "SPEAK",
-                        value: `Let's create an appointment`
-                    }))
-                }}
-        },
-        who: {
+        pokemon: {
             initial: "prompt",
             on: {
                 RECOGNISED: [{
-                    cond: (context) => "person" in (grammar[context.recResult] || {}),
-                    actions: assign((context) => { return { person: grammar[context.recResult].person } }),
-                    target: "day"
+                    target: "place",
+                    cond: (context) => "pokemon" in (grammar[context.recResult] || {}),
+                    actions: [assign((context) => { return { pokemon: grammar[context.recResult].pokemon } }),assign((context) => { grammar3["count"]=0}), cancel("maxsp")],
+                    
 
                 },
+
                 { target: ".nomatch" ,
-                 cond: (context) => !(context.recResult in commands),
+                 cond: (context) => !(context.recResult in help_commands),
                  actions: cancel("maxsp")},
-                 {target: "help2",
-                 cond: (context) => context.recResult in commands}],
-                 MAXSPEECH: [{target:"who.maxspeech",
+
+                 {target: "pokemon_help",
+                 cond: (context) => context.recResult in help_commands}],
+                 
+                 MAXSPEECH: [{target:".maxspeech",
                  cond: (context) => grammar3["count"] <= 2,
                 actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
                 },{target: "#root.dm.init", 
                 cond: (context) => grammar3["count"] > 2, 
                 actions:assign((context) => { grammar3["count"]=0})}] 
             },
+
             states: {
                 prompt: {
-                    entry: say("Who\re you meeting with?"),
+                    entry: say("Which Pokemon have you seen?"),
                     on: { ENDSPEECH: "ask" }
                 },
                 hist: {type: "history"},
                 ask: {
-                    entry: [listen(), send('MAXSPEECH', {delay: 5000, id: "maxsp"})]
+                    entry: [listen(), send('MAXSPEECH', {delay: 6000, id: "maxsp"})]
                 },
                 maxspeech: {
-                    ...speech(`You didn't respond. Which person are you meeting with?`)
+                    ...speech("Please respond, what is the Pokemon you have seen?")
                 },
                 nomatch: {
-                    entry: say("Sorry I don't know them"),
+                    entry: say("Sorry I don't know that Pokemon."),
                     on: { ENDSPEECH:  "prompt" }
                 
                 }
              }
         },
-        help2:{
-            ...helpm("Please, tell me the name.","who")
+
+        pokemon_help:{
+            ...help("Please tell me the name of the pokemon you want to input data for.","pokemon")
         },
-        day: {
+
+        place: {
             initial: "prompt",
             on: {
 	            RECOGNISED: [{
 	                cond: (context) => "day" in (grammar[context.recResult] || {}),
-		            actions: [assign((context) => { return { day: grammar[context.recResult].day } }),assign((context) => { grammar3["count"]=0}),cancel("maxsp")],
-		            target: "wholeday"
+		             actions: [assign((context) => { return { place: grammar[context.recResult].place } }),assign((context) => { grammar3["count"]=0}),cancel("maxsp")],
+		            target: "shiny"
 
 		        },	
 		        { target: ".nomatch" ,
-                cond: (context) => !(context.recResult in commands),
+                cond: (context) => !(context.recResult in help_commands),
                 actions: cancel("maxsp")},
-                {target: "help3",
-                cond: (context) => context.recResult in commands}],
-                MAXSPEECH: [{target:"day.maxspeech",
+                {target: "place_help",
+                cond: (context) => context.recResult in help_commands}],
+                MAXSPEECH: [{target:".maxspeech",
                 cond: (context) => grammar3["count"] <= 2,
                 actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
                 },{target: "#root.dm.init", 
                 cond: (context) => grammar3["count"] > 2, 
                 actions:assign((context) => { grammar3["count"]=0})}] 
 	        },
+
             states: {
                 prompt: {
                     entry: send((context) => ({
                         type: "SPEAK",
-                        value: `OK. ${context.person}. What day is your meeting on?`
+                        value: `You have come across a ${context.pokemon}. What region have you made this encounter in?`
                     })),
 		            on: { ENDSPEECH: "ask" }
                 },
                 hist: {type: "history"},
 		        ask: {
-		            entry: [listen(), send('MAXSPEECH', {delay: 5000, id: "maxsp"})]
+		            entry: [listen(), send('MAXSPEECH', {delay: 6000, id: "maxsp"})]
 	            },
                 maxspeech: {
-                 ...speech("You have not responded. Please, state a day")
+                 ...speech("Please respond. Which region did you make your encounter in?")
               },
 		        nomatch: {
-		            entry: say("Sorry, I don't know which day you are talking about."),
+		            entry: say("Sorry, I don't know which region or place you are talking about"),
 		            on: { ENDSPEECH: "prompt" }
 	            }	     
             }
         },
-        help3:{
-            ...helpm("Please tell me the day.","day")
+
+        place_help:{
+            ...help("Please tell me where your encounter was.","place")
         },
         
-	    wholeday: {
+	    shiny: {
 		        initial: "prompt",
 		        on: {
 	                RECOGNISED: [{
 			            cond: (context) => grammar2[context.recResult] === true,
-                        target: "notime",
-                        actions: [ assign((context)=>{ grammar3["count"]=0}), cancel("maxsp")]},
+                        target: "timefixed",
+                        actions: [assign((context) => { grammar3["count"]=0}),cancel("maxsp")]},
 						{
 						cond: (context) => grammar2[context.recResult] === false,
-						target: "whattime",
-                        actions: [ assign((context)=>{ grammar3["count"]=0}), cancel("maxsp")]
+						target: "settime",
+                        actions: [assign((context) => { grammar3["count"]=0}),cancel("maxsp")]
 
 		            },
+
 	                { target: ".nomatch",
-                    cond: (context) => !(context.recResult in commands),
+                    cond: (context) => !(context.recResult in help_commands),
                     actions: cancel("maxsp")},
-                    {target: "help4",
-                    cond: (context) => context.recResult in commands}],
-                    MAXSPEECH: [{target:"wholeday.maxspeech",
+                    {target: "shiny_help",
+                    cond: (context) => context.recResult in help_commands}],
+                    
+                    MAXSPEECH: [{target:".maxspeech",
                     cond: (context) => grammar3["count"] <= 2,
-                actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
-                },{target: "#root.dm.init", 
-                cond: (context) => grammar3["count"] > 2, 
-                actions:assign((context) => { grammar3["count"]=0})}] 
+                    actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
+                    },
+                    {target: "#root.dm.init", 
+                    cond: (context) => grammar3["count"] > 2, 
+                    actions:assign((context) => { grammar3["count"]=0})}] 
 		        },
+
 		        states: {
 		            prompt: {
 			            entry: send((context) => ({
 			                type: "SPEAK",
-						    value: `Good, on ${context.day}. Will it take the whole day?`
+						    value: `Interesting. The encounter was in ${context.place}. Tell me, was this a shiny Pokemon?`
 			            })),
 			            on: { ENDSPEECH: "ask" }
 		            },
+
                     hist: {type: "history"},
-		            ask: {
-		                entry: [listen(), send('MAXSPEECH', {delay: 5000, id: "maxsp"})]
+		            
+                    ask: {
+		                entry: [listen(), send('MAXSPEECH', {delay: 6000, id: "maxsp"})]
 		            },
+                    
                     maxspeech: {
-                      ...speech("You did not respond, say a decision")
+                      ...speech("Please respond.")
                     },
-		            nomatch: {
-			            entry: say("Please repeat it again"),
+		            
+                    nomatch: {
+			            entry: say("Please answer the question."),
 		                on: { ENDSPEECH: "prompt" }
 		            }
 		        }	     
             },
-            help4:{
-                ...helpm("Please tell me the decision","wholeday")
+            
+            shiny_help:{
+                ...help("Please answer the question with yes or no.","shiny")
             },
-            notime: {
+            
+            timefixed: {
 		           initial: "prompt",
 	               on: {
 		               RECOGNISED: [{ 
 			               cond: (context) => grammar2[context.recResult] === true,
 			               target: "Finished",
-                           actions: [ assign((context)=> { grammar3["count"]=0}), cancel("maxsp")]},
+                           actions: [assign((context) => { grammar3["count"]=0}),cancel("maxsp")]},
+
 						   {
-							cond: (context) => grammar2[context.recResult] === false,
-                           target: "who",
-                           actions: [ assign((context)=>{ grammar3["count"]=0}), cancel("maxsp")]
+						   cond: (context) => grammar2[context.recResult] === false,
+                           target: "pokemon",
+                           actions: [assign((context) => { grammar3["count"]=0}),cancel("maxsp")]
 						   
 		                },
+
 		                { target: ".nomatch",
-                        cond: (context) => !(context.recResult in commands),
+                        cond: (context) => !(context.recResult in help_commands),
                         actions: cancel("maxsp")},
-                        {target: "help5",
-                        cond: (context) => context.recResult in commands}],
-                        MAXSPEECH: [{target:"notime.maxspeech",
+                        
+                        {target: "timefixed_help",
+                        cond: (context) => context.recResult in help_commands}],
+                        MAXSPEECH: [{target:".maxspeech",
                         cond: (context) => grammar3["count"] <= 2,
-                actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
-                },{target: "#root.dm.init", 
-                cond: (context) => grammar3["count"] > 2, 
-                actions:assign((context) => { grammar3["count"]=0})}]  
+                        actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
+                        },
+                        {target: "#root.dm.init", 
+                        cond: (context) => grammar3["count"] > 2, 
+                        actions:assign((context) => { grammar3["count"]=0})}]  
 		            },
 		            states: {
 		                prompt: {
 			                entry: send((context) => ({
 			                    type: "SPEAK",
-								value: `Great. Do you want to me create an appointment with ${context.person} on ${context.day} for the whole day?`
+								value: `Superb. Do you want me to confirm an entry with an encounter with a shiny ${context.pokemon} in ${context.place}?`
                             })),
                             on: { ENDSPEECH: "ask" }
 		                },
+
                         hist: {type: "history"},
-		                ask: {
-			                entry: [listen(), send('MAXSPEECH', {delay: 5000, id: "maxsp"})]
+		                
+                        ask: {
+			                entry: [listen(), send('MAXSPEECH', {delay: 6000, id: "maxsp"})]
 		                },
+
                         maxspeech: {
-                             ...speech("You did not respond, please confirm.")},
-		                nomatch: {
-			                entry: say("Please repeat it again"),
+                             ...speech("Please, respond. Confirm the Pokedex entry.")},
+		                
+                        nomatch: {
+			                entry: say("Please, repeat it again."),
 			                on: { ENDSPEECH: "prompt" }
 		                }
                     }
 	            },
-                help5:{
-                    ...helpm("Please confirm it","notime")
+
+                timefixed_help:{
+                    ...help("Confirm the Pokedex entry, please.","timefixed")
                 },
-				whattime: {
+
+				settime: {
 					initial: "prompt",
 					on: {
 						RECOGNISED: [{
 							cond: (context) => "time" in (grammar[context.recResult] || {}),
-							actions: [assign((context) => { return { time: grammar[context.recResult].time } }), assign((context) => { grammar3["count"]=0})],
-							target: "withtime"
-
+							actions: [assign((context) => { return { level: grammar[context.recResult].time } }),assign((context) => { grammar3["count"]=0})],
+							target: "confirm_time"
 						},
+
 						{ target: ".nomatch" ,
-                        cond: (context) => !(context.recResult in commands),
+                        cond: (context) => !(context.recResult in help_commands),
                         actions: cancel("maxsp")},
-                        {target: "help6",
-                        cond: (context) => context.recResult in commands}],
-                        MAXSPEECH: [{target:"whattime.maxspeech",
+                        {target: "settime_help",
+                        cond: (context) => context.recResult in help_commands}],
+
+                        MAXSPEECH: [{target:".maxspeech",
                         cond: (context) => grammar3["count"] <= 2,
-                actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
-                },{target: "#root.dm.init", 
-                cond: (context) => grammar3["count"] > 2, 
-                actions:assign((context) => { grammar3["count"]=0})}]  
+                        actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
+                        },{target: "#root.dm.init", 
+                        cond: (context) => grammar3["count"] > 2, 
+                        actions:assign((context) => { grammar3["count"]=0})}]  
 					},
 					states: {
-						prompt: { entry: say("What time is your meeting"),
+						prompt: { entry: say("What level is the Pokemon}?"),
 						on: { ENDSPEECH: "ask" }
 					},
                     hist: {type: "history"},
 					ask: {
-						entry: [listen(), send('MAXSPEECH', {delay: 5000, id: "maxsp"})]
+						entry: [listen(), send('MAXSPEECH', {delay: 6000, id: "maxsp"})]
 				},
                 maxspeech: {
-                  ...speech("You did not respond. Please, state a time")
+                  ...speech("Please respond. What level was the Pokemon you encountered?")
                 },
 				nomatch: {
 					entry: say("Please repeat it again"),
@@ -557,65 +558,73 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 				}
 			}
 		},
-        help6:{
-            ...helpm("Please, tell me the time","whattime")
+        settime_help:{
+            ...help("Please, tell me what level the Pokemon was.","settime")
         },
         
-		withtime: {
+		confirm_time: {
 			initial: "prompt",
 			on: {
 				RECOGNISED: [{ 
 					cond: (context) => grammar2[context.recResult] === true,
 					target: "Finished",
-                    actions: assign((context)=>{ grammar3["count"]=0})},
+                    actions: assign((context) => { grammar3["count"]=0})},
 					{
 					cond: (context) => grammar2[context.recResult] === false,
-					target: "who",
-                    actions: [assign((context)=>{ grammar3["count"]=0}), cancel("maxsp")]
+					target: "pokemon",
+                    actions: [assign((context) => { grammar3["count"]=0}),cancel("maxsp")]
 
 				 },
 				 { target: ".nomatch",
-                 cond: (context) => !(context.recResult in commands),
+                 cond: (context) => !(context.recResult in help_commands),
                  actions: cancel("maxsp")},
-                 {target: "help7",
-                 cond: (context) => context.recResult in commands}],
-                 MAXSPEECH: [{target:"withtime.maxspeech",
+                 {target: "confirm_time_help",
+                 cond: (context) => context.recResult in help_commands}],
+                
+                 MAXSPEECH: [{target:".maxspeech",
                  cond: (context) => grammar3["count"] <= 2,
                 actions: assign((context) => { grammar3["count"]=grammar3["count"]+1 } )
-                },{target: "#root.dm.init", 
+                },
+            
+                {target: "#root.dm.init", 
                 cond: (context) => grammar3["count"] > 2, 
                 actions:assign((context) => { grammar3["count"]=0})}] 
 			 },
+
 			 states: {
 				 prompt: {
 					 entry: send((context) => ({
 						 type: "SPEAK",
-						 value: `Great. Do you want to me create an appointment with ${context.person} on ${context.day} at ${context.time}?`
+						 value: `Excellent. Do you want me to confirm an entry with an encounter with a level ${context.level} ${context.pokemon} in ${context.place}?`
 					 })),
 					 on: { ENDSPEECH: "ask" }
 				 },
+
                  hist: {type: "history"},
-				 ask: {
-					 entry: [listen(), send('MAXSPEECH', {delay: 5000, id: "maxsp"})]
+				 
+                 ask: {
+					 entry: [listen(), send('MAXSPEECH', {delay: 6000, id: "maxsp"})]
 				 },
+
                 maxspeech: {
-                 ...speech("You did not respond, please confirm.")
-                },        
+                 ...speech("Please, confirm the Pokedex entry.")
+                },    
+                    
 				 nomatch: {
-					 entry: say("Please repeat it again"),
+					 entry: say("Please, repeat it again."),
 					 on: { ENDSPEECH: "prompt" }
 				 }
 			 }
 		},
-        help7:{
-            ...helpm("Please confirm","withtime")
+        confirm_time_help:{
+            ...help("Please, confirm the Pokedex entry.","confirm_time")
         },
         
         Finished: {
 		                 initial: "prompt",
 		                 on: { ENDSPEECH: "init" },
 		                 states: {
-			                 prompt: { entry: say("Your appointment has been created!")
+			                 prompt: { entry: say("Congratulations. Your Pokedex has been updated with your encounter and is one step closer to being completed!")
 		                    },
 	                    }
 	                }	    
@@ -626,7 +635,7 @@ export const dmMachine: MachineConfig<SDSContext, any, SDSEvent> = ({
 			/* RASA API
  *  */
 const proxyurl = "https://cors-anywhere.herokuapp.com/";
-const rasaurl = "https://intents-oyousuf.herokuapp.com/model/parse"
+const rasaurl = "https://appointment--app.herokuapp.com/model/parse"
 const nluRequest = (text: string) =>
     fetch(new Request(proxyurl + rasaurl, {
         method: "POST",
